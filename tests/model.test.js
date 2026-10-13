@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {initialState,totals,createOrder,advanceOrder,cancelOrder,logMeal,nutritionTotals} from '../dist/model.js';
+test('cart calculates integer cents and quantity',()=>assert.deepEqual(totals({salad:2,chicken:1}),{subtotal:4230,count:3}));
+test('empty checkout is rejected',()=>assert.throws(()=>createOrder(initialState(),'Demo Lane'),/empty/));
+test('blank delivery address is rejected',()=>{const s=initialState();s.cart.salad=1;assert.throws(()=>createOrder(s,' '),/address/);});
+test('checkout saves order and clears cart without mutating input',()=>{const s=initialState();s.cart.salad=2;const n=createOrder(s,'Demo Lane',123);assert.equal(n.orders[0].total,2830);assert.deepEqual(n.cart,{});assert.equal(s.cart.salad,2);});
+test('delivery advances and stops at delivered',()=>{let s=initialState();s.cart.salad=1;s=createOrder(s,'Demo Lane',123);for(let i=0;i<5;i++)s=advanceOrder(s,s.orders[0].id);assert.equal(s.orders[0].status,3);});
+test('cancel only confirmed orders',()=>{let s=initialState();s.cart.salad=1;s=createOrder(s,'Demo Lane',123);assert.equal(cancelOrder(s,s.orders[0].id).orders[0].status,-1);s=advanceOrder(s,s.orders[0].id);assert.equal(cancelOrder(s,s.orders[0].id).orders[0].status,1);});
+test('logging updates macros independently of orders',()=>{let s=logMeal(initialState(),'salad',2);assert.deepEqual(nutritionTotals(s.nutrition),{kcal:840,protein:36,carbs:96,fat:34});assert.equal(s.orders.length,0);});
+test('invalid meal log rejected',()=>assert.throws(()=>logMeal(initialState(),'unknown'),/Invalid/));

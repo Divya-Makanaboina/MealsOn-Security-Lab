@@ -1,0 +1,14 @@
+export const meals=[
+{id:'salad',name:'Garden harvest bowl',description:'Crisp greens, quinoa, avocado & lemon dressing.',emoji:'🥗',category:'Plant based',price:12.90,kcal:420,protein:18,carbs:48,fat:17,color:'#edf5cf'},
+{id:'chicken',name:'Grilled chicken plate',description:'Herbed chicken, roast potatoes & seasonal greens.',emoji:'🍗',category:'High protein',price:16.50,kcal:610,protein:48,carbs:52,fat:21,color:'#ffe5db'},
+{id:'salmon',name:'Salmon & rice bowl',description:'Flaked salmon, brown rice, edamame & sesame.',emoji:'🍣',category:'High protein',price:18.20,kcal:580,protein:36,carbs:56,fat:23,color:'#fce2ea'},
+{id:'lentils',name:'Comfort lentil curry',description:'Spiced lentils, steamed rice & cucumber salad.',emoji:'🍛',category:'Plant based',price:13.50,kcal:490,protein:22,carbs:68,fat:14,color:'#f9edce'},
+{id:'wrap',name:'Rainbow veggie wrap',description:'Roasted vegetables, hummus & a wholegrain wrap.',emoji:'🌯',category:'Light meals',price:10.90,kcal:380,protein:14,carbs:46,fat:16,color:'#e2eee7'},
+{id:'eggs',name:'Sunny breakfast toast',description:'Eggs, avocado & sourdough. A brighter start.',emoji:'🍳',category:'Light meals',price:9.50,kcal:350,protein:21,carbs:28,fat:19,color:'#fff1c2'}];
+export const initialState=()=>({version:1,profile:{name:'Alex',goal:2000,diet:'All meals',consent:false},favorites:[],cart:{},orders:[],nutrition:[],water:0,challenges:[],notifications:[],audit:[]});
+export function totals(cart){return Object.entries(cart).reduce((a,[id,q])=>{const m=meals.find(m=>m.id===id);if(m&&Number.isInteger(q)&&q>0){a.subtotal+=Math.round(m.price*100)*q;a.count+=q;}return a;},{subtotal:0,count:0});}
+export function nutritionTotals(logs){return logs.reduce((a,l)=>{const m=meals.find(m=>m.id===l.mealId);if(m){for(const k of ['kcal','protein','carbs','fat'])a[k]+=m[k]*l.quantity;}return a;},{kcal:0,protein:0,carbs:0,fat:0});}
+export function createOrder(state,address,now=Date.now()){const t=totals(state.cart);if(!t.count)throw Error('Your cart is empty.');if(!address.trim())throw Error('Enter a fictional delivery address.');const order={id:'MO-'+now.toString(36).toUpperCase(),items:Object.entries(state.cart).map(([id,q])=>({id,q})),total:t.subtotal+250,address:address.trim(),status:0,created:new Date(now).toISOString()};return {...state,cart:{},orders:[order,...state.orders]};}
+export function advanceOrder(state,id){return {...state,orders:state.orders.map(o=>o.id===id&&o.status>=0&&o.status<3?{...o,status:o.status+1}:o)};}
+export function cancelOrder(state,id){return {...state,orders:state.orders.map(o=>o.id===id&&o.status===0?{...o,status:-1}:o)};}
+export function logMeal(state,id,quantity=1,now=new Date()){if(!meals.some(m=>m.id===id)||!Number.isInteger(quantity)||quantity<1)throw Error('Invalid meal.');return {...state,nutrition:[...state.nutrition,{id:String(now.getTime())+state.nutrition.length,mealId:id,quantity,date:now.toLocaleDateString('en-CA')}]};}
